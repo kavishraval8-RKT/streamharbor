@@ -1,0 +1,26 @@
+{
+  "name": "streamharbor-backend",
+  "version": "1.0.0",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "nodemon --watch src/**/*.ts --exec ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/multipart": "^8.3.1",
+    "bullmq": "^5.7.9",
+    "dotenv": "^16.6.1",
+    "fastify": "^4.29.1",
+    "minio": "^7.1.3",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.24",
+    "@types/pg": "^8.11.6",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,138 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      target: builder
+    ports:
+      - "3000:3000"
+    volumes:
+      # Keep time sync volumes
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - ./frontend:/app
+      - /app/node_modules
+    # Ensure dependencies are installed inside the container when mounting source
+    command: sh -c "apk update && apk add -U --no-cache tzdata && npm install && npm run dev"
+    env_file:
+      - .env
+    environment:
+      # Next.js backend URLs
+      - BACKEND_INTERNAL_URL=http://backend:8080
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+      # Auth configuration
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=your-super-secret-key-min-32-chars-long
+      - ADMIN_EMAIL=admin@streamharbor.local
+      - ADMIN_PASSWORD=admin123
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      target: builder
+    ports:
+      - "8080:8080"
+    volumes:
+      # Keep time sync volumes
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - ./backend:/app
+      - /app/node_modules
+    # Ensure dependencies are installed inside the container when mounting source
+    command: sh -c "apk update && apk add -U --no-cache tzdata && npm install && npm run dev"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    env_file:
+      - .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Keep time sync volumes
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    env_file:
+      - .env
+    environment:
+      - MINIO_SERVER_URL=http://localhost:9000
+      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+      # Mount the script folder
+      - ./minio_bootstrap:/bootstrap
+      # Mount the config files to a separate path inside container
+      - ./cors.xml:/bootstrap_config/cors.xml:ro
+      - ./policy.json:/bootstrap_config/policy.json:ro
+    # Run script, then start server
+    entrypoint: |
+      sh -c "
+        chmod +x /bootstrap/set_policies.sh && /bootstrap/set_policies.sh &
+        exec /usr/bin/docker-entrypoint.sh server /data/disk{1...4} --console-address :9001
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  queue:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes: # Keep time sync volumes
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build:
+      context: ./worker
+      target: builder
+    volumes:
+      # Keep time sync volumes
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+      - ./worker:/app
+      - /app/node_modules
+    # Ensure dependencies are installed inside the container when mounting source
+    command: sh -c "apk update && apk add -U --no-cache tzdata && npm install && npm run dev"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  minio_data:

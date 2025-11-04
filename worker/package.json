@@ -1,0 +1,23 @@
+{
+  "name": "streamharbor-worker",
+  "version": "1.0.0",
+  "main": "dist/processor.js",
+  "scripts": {
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/processor.ts",
+    "build": "tsc",
+    "start": "node dist/processor.js"
+  },
+  "dependencies": {
+    "bullmq": "^5.7.9",
+    "dotenv": "^16.4.5",
+    "minio": "^7.1.3",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/pg": "^8.11.6",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
