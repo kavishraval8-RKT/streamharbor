@@ -95,11 +95,17 @@ server.get('/api/upload-url', async (request, reply) => {
     const uploadUrl = await minioClient.presignedPutObject(bucket, storagePath, 60 * 60); // 1 hour
 
     // Replace internal MinIO hostname with public URL so browser can reach it
-    const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
-    const internalHost = `${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}`;
-    const publicUrl = uploadUrl.replace(`http://${internalHost}`, publicBase).replace(`https://${internalHost}`, publicBase);
-
-    return { uploadUrl: publicUrl, storagePath };
+    const publicBase = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
+    
+    // MinIO generates URLs like "http://minio:9000/bucket/path?query"
+    // We need to replace the hostname and scheme with the public URL
+    const url = new URL(uploadUrl);
+    const publicURL = new URL(publicBase);
+    url.protocol = publicURL.protocol;
+    url.hostname = publicURL.hostname;
+    url.port = publicURL.port || (publicURL.protocol === 'https:' ? '443' : '80');
+    
+    return { uploadUrl: url.toString(), storagePath };
   } catch (err) {
     request.log.error(err);
     reply.status(500).send({ error: 'Failed to generate upload URL' });
