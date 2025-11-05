@@ -13,8 +13,10 @@ const server = Fastify({ logger: true });
 // CORS: allow the frontend origin to call our API
 server.register(cors, {
   origin: 'https://streamharbor.me',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
 });
 
 // Accept any content-type as a stream for raw uploads

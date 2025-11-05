@@ -94,6 +94,7 @@ export default function UploadPage() {
       const storagePath = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', 'https://api.streamharbor.me/api/upload-file');
+        xhr.withCredentials = true; // Enable CORS credentials
         xhr.upload.onprogress = (evt) => {
           if (evt.lengthComputable) setUploadPct(Math.round((evt.loaded / evt.total) * 100));
         };
@@ -119,6 +120,7 @@ export default function UploadPage() {
         new Promise<any>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           xhr.open('POST', endpoint);
+          xhr.withCredentials = true; // Enable CORS credentials
           xhr.upload.onprogress = (evt) => {
             if (evt.lengthComputable && onProgress) {
               const pct = Math.round((evt.loaded / evt.total) * 100);
