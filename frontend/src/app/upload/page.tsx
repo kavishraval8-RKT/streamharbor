@@ -7,6 +7,21 @@ import { useRouter } from 'next/navigation';
 export default function UploadPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  
+  // All hooks must be called before any conditional returns
+  const [file, setFile] = useState<File | null>(null);
+  const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('idle'); // idle | uploading | processing | complete | error
+  const [message, setMessage] = useState('');
+  const [uploadPct, setUploadPct] = useState(0);
+  const [thumbPct, setThumbPct] = useState(0);
+  const [processPct, setProcessPct] = useState<number | null>(null);
+  const [subtitles, setSubtitles] = useState<Array<{ file: File | null; lang: string }>>([
+    { file: null, lang: '' }
+  ]);
 
   // Redirect non-admin users
   useEffect(() => {
@@ -23,19 +38,6 @@ export default function UploadPage() {
       </main>
     );
   }
-  const [file, setFile] = useState<File | null>(null);
-  const [thumbnail, setThumbnail] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | uploading | processing | complete | error
-  const [message, setMessage] = useState('');
-  const [uploadPct, setUploadPct] = useState(0);
-  const [thumbPct, setThumbPct] = useState(0);
-  const [processPct, setProcessPct] = useState<number | null>(null);
-  const [subtitles, setSubtitles] = useState<Array<{ file: File | null; lang: string }>>([
-    { file: null, lang: '' }
-  ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

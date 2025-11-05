@@ -30,7 +30,7 @@ export default function VideosGrid({ initialVideos }: { initialVideos: Video[] }
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:8080/api/videos');
+        const res = await fetch('https://api.streamharbor.me/api/videos');
         if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
         const json = await res.json();
         if (!mounted) return;
@@ -74,7 +74,7 @@ export default function VideosGrid({ initialVideos }: { initialVideos: Video[] }
             setLoading(true);
             setError(null);
             try {
-              const res = await fetch('http://localhost:8080/api/videos');
+              const res = await fetch('https://api.streamharbor.me/api/videos');
               if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
               const json = await res.json();
               setVideos(json);

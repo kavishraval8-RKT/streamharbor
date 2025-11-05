@@ -18,7 +18,7 @@ export default function AdminDashboard() {
   const fetchVideos = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8080/api/videos');
+      const res = await fetch('https://api.streamharbor.me/api/videos');
       if (!res.ok) throw new Error('Failed to fetch');
       const json = await res.json();
       setVideos(json);
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const handleDelete = async (id: string | number) => {
     if (!confirm('Delete this video and its files? This cannot be undone.')) return;
     try {
-      const res = await fetch(`http://localhost:8080/api/videos/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://api.streamharbor.me/api/videos/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       // optimistic remove
       setVideos((v) => v.filter((x) => String(x.id) !== String(id)));
