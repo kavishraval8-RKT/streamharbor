@@ -12,7 +12,7 @@ const server = Fastify({ logger: true });
 
 // CORS: allow the frontend origin to call our API
 server.register(cors, {
-  origin: 'http://localhost:3000',
+  origin: 'https://streamharbor.me',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type'],
 });
@@ -44,7 +44,7 @@ server.register(multipart, {
 const getPublicUrl = (url: string | null) => {
   if (!url) return null;
   const useSSL = process.env.MINIO_USE_SSL === 'true';
-  const publicBase = process.env.MINIO_PUBLIC_URL || `http${useSSL ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
+  const publicBase = process.env.MINIO_PUBLIC_URL || `https://minio.streamharbor.me`;
   const internalHost = `${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}`;
   try {
     const parsed = new URL(url);

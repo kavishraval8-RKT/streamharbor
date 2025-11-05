@@ -91,7 +91,7 @@ export default function UploadPage() {
 
       const storagePath = await new Promise<string>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'http://localhost:8080/api/upload-file');
+        xhr.open('POST', 'https://api.streamharbor.me/api/upload-file');
         xhr.upload.onprogress = (evt) => {
           if (evt.lengthComputable) setUploadPct(Math.round((evt.loaded / evt.total) * 100));
         };
@@ -142,12 +142,12 @@ export default function UploadPage() {
         const thumbFd = new FormData();
         thumbFd.append('file', thumbnail, thumbnail.name);
 
-        const thumbData = await postFormWithProgress('http://localhost:8080/api/upload-thumbnail', thumbFd, setThumbPct).catch(() => null);
+        const thumbData = await postFormWithProgress('https://api.streamharbor.me/api/upload-thumbnail', thumbFd, setThumbPct).catch(() => null);
         if (thumbData) thumbnailPath = thumbData.storagePath;
       }
 
       // 3. Tell our backend to create the video record and queue the job
-      const res3 = await fetch('http://localhost:8080/api/videos', {
+      const res3 = await fetch('https://api.streamharbor.me/api/videos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +175,7 @@ export default function UploadPage() {
           subFd.append('lang', s.lang.trim());
         });
         try {
-          await fetch(`http://localhost:8080/api/videos/${videoId}/subtitles`, {
+          await fetch(`https://api.streamharbor.me/api/videos/${videoId}/subtitles`, {
             method: 'POST',
             body: subFd,
           });
@@ -191,7 +191,7 @@ export default function UploadPage() {
       let mounted = true;
       const poll = async () => {
         try {
-          const r = await fetch(`http://localhost:8080/api/videos/${videoId}`);
+          const r = await fetch(`https://api.streamharbor.me/api/videos/${videoId}`);
           if (!r.ok) return;
           const obj = await r.json();
           if (!mounted) return;

@@ -106,7 +106,7 @@ export default function NetflixStylePlayer({ src, poster, title, videoId }: Prop
     let aborted = false;
     (async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/videos/${videoId}/subtitles`);
+        const res = await fetch(`https://api.streamharbor.me/api/videos/${videoId}/subtitles`);
         if (!res.ok) return;
         const subs: Array<{ label?: string; url: string; language?: string }> = await res.json();
         if (aborted) return;

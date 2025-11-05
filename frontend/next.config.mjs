@@ -16,6 +16,11 @@ const nextConfig = {
         hostname: 'minio',
         port: '9000',
         pathname: '/processed-media/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'minio.streamharbor.me',
+        pathname: '/processed-media/**',
       }
     ],
   }
