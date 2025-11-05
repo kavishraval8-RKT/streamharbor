@@ -87,29 +87,29 @@ export default function UploadPage() {
     setThumbPct(0);
 
     try {
-      // Upload via backend streaming (no size cap with updated backend)
-      const fd = new FormData();
-      fd.append('file', file, file.name);
+      // Step 1: Get presigned URL from backend
+      setMessage('Getting upload URL...');
+      const urlRes = await fetch(`https://api.streamharbor.me/api/upload-url?filename=${encodeURIComponent(file.name)}`);
+      if (!urlRes.ok) throw new Error('Failed to get upload URL');
+      const { uploadUrl, storagePath } = await urlRes.json();
 
-      const storagePath = await new Promise<string>((resolve, reject) => {
+      // Step 2: Upload directly to MinIO using presigned URL (much faster!)
+      setMessage('Uploading file directly to storage...');
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'https://api.streamharbor.me/api/upload-file');
-        // Note: withCredentials removed - upload endpoint doesn't need authentication
+        xhr.open('PUT', uploadUrl);
         xhr.upload.onprogress = (evt) => {
           if (evt.lengthComputable) setUploadPct(Math.round((evt.loaded / evt.total) * 100));
         };
         xhr.onload = () => {
-          try {
-            const ok = xhr.status >= 200 && xhr.status < 300;
-            const json = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-            if (!ok) return reject(new Error(json.error || `Upload failed (${xhr.status})`));
-            resolve(json.storagePath);
-          } catch (err) {
-            reject(err);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
           }
         };
         xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.send(fd);
+        xhr.send(file);
       });
       setMessage('File uploaded. Finalizing with backend...');
 
