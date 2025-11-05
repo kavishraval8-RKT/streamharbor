@@ -13,8 +13,8 @@ const server = Fastify({ logger: true });
 // CORS: allow the frontend origin to call our API
 server.register(cors, {
   origin: 'https://streamharbor.me',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
+  allowedHeaders: '*', // Allow all headers for now to debug
   credentials: true,
   exposedHeaders: ['Content-Length', 'X-Request-Id'],
 });
