@@ -285,7 +285,7 @@ server.get('/api/videos', async (request, reply) => {
     const { q } = request.query as { q?: string };
     const params: any[] = [];
     let sql = `
-      SELECT id, title, description, thumbnail_url, status, created_at, storage_path, processing_error, processing_progress 
+      SELECT id, title, description, thumbnail_url, status, created_at, storage_path, processing_error 
       FROM videos 
       WHERE 1=1
     `;
