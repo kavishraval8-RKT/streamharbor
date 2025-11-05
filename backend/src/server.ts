@@ -285,7 +285,7 @@ server.get('/api/videos', async (request, reply) => {
     const { q } = request.query as { q?: string };
     const params: any[] = [];
     let sql = `
-  SELECT id, title, description, thumbnail_url, status, created_at, storage_path, processing_error, processing_progress 
+      SELECT id, title, description, thumbnail_url, status, created_at, storage_path, processing_error, processing_progress 
       FROM videos 
       WHERE 1=1
     `;
@@ -306,7 +306,7 @@ server.get('/api/videos', async (request, reply) => {
       // Construct a raw URL for the original uploaded file so the frontend can fallback to it
       const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
       const rawUrl = r.storage_path ? `${publicBase}/raw-uploads/${encodeURIComponent(r.storage_path)}` : null;
-  return { ...r, thumbnail_url: thumbnail, raw_url: rawUrl };
+      return { ...r, thumbnail_url: thumbnail, raw_url: rawUrl };
     });
     return rows;
   } catch (err) {
