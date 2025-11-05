@@ -16,11 +16,11 @@ services:
     env_file:
       - .env
     environment:
-      # Next.js backend URLs - use public URL for server-side API calls
-      - BACKEND_INTERNAL_URL=https://api.streamharbor.me
-      - NEXT_PUBLIC_BACKEND_URL=https://api.streamharbor.me
+      # Next.js backend URLs - localhost for development
+      - BACKEND_INTERNAL_URL=http://backend:8080
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
       # Auth configuration
-      - NEXTAUTH_URL=https://streamharbor.me
+      - NEXTAUTH_URL=http://localhost:3000
       - NEXTAUTH_SECRET=your-super-secret-key-min-32-chars-long
       - ADMIN_EMAIL=admin@streamharbor.local
       - ADMIN_PASSWORD=admin123

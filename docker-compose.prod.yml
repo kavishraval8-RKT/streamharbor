@@ -1,0 +1,10 @@
+# Production overrides for StreamHarbor
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  frontend:
+    environment:
+      # Production URLs
+      - BACKEND_INTERNAL_URL=https://api.streamharbor.me
+      - NEXT_PUBLIC_BACKEND_URL=https://api.streamharbor.me
+      - NEXTAUTH_URL=https://streamharbor.me
