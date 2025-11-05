@@ -59,8 +59,7 @@ export async function requireAuth(): Promise<AuthUser> {
       isApproved: payload.isApproved !== false,
     };
   } catch (error) {
-    // Invalid token - clear it before redirecting
-    cookies().delete('auth-token');
+    // Invalid token - redirect to auth (cookie will be cleared by logout route)
     redirect('/auth');
   }
 }
