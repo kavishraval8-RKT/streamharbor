@@ -48,10 +48,18 @@ export default function LoginPage() {
         console.log('✅ Login successful! Redirecting to:', callbackUrl);
         console.log('✅ About to redirect, timestamp:', Date.now());
         
+        // Build absolute URL to ensure proper redirect (fixes localhost redirect issue)
+        const baseUrl = window.location.origin.includes('localhost') 
+          ? 'https://streamharbor.me' 
+          : window.location.origin;
+        const redirectUrl = callbackUrl.startsWith('http') 
+          ? callbackUrl 
+          : `${baseUrl}${callbackUrl}`;
+        
         // Use setTimeout to ensure the redirect happens after React's render cycle
         setTimeout(() => {
-          console.log('✅ Executing redirect now...');
-          window.location.href = callbackUrl;
+          console.log('✅ Executing redirect now to:', redirectUrl);
+          window.location.href = redirectUrl;
         }, 100);
         
         // Don't set isLoading to false or run finally block
