@@ -70,7 +70,7 @@ services:
       retries: 5
 
   minio:
-    image: minio/minio:RELEASE.2024-03-15T01-07-19Z
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
     env_file:
       - .env
     environment:
