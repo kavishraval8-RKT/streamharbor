@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verify } from 'jsonwebtoken';
 
+// Force dynamic rendering for this API route (uses cookies)
+export const dynamic = 'force-dynamic';
+
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-super-secret-key-min-32-chars-long';
 
 export async function GET(request: Request) {
