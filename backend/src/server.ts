@@ -79,6 +79,30 @@ const getPublicUrl = (url: string | null) => {
 // Simple health check
 server.get('/', async () => ({ status: 'ok', message: 'StreamHarbor backend is running' }));
 
+// Get presigned URL for direct upload to MinIO (bypasses Cloudflare size limits)
+server.get('/api/presigned-upload-url', async (request, reply) => {
+  try {
+    const filename = (request.query as any).filename || `upload-${Date.now()}`;
+    const ext = filename.split('.').pop() || 'bin';
+    const id = crypto.randomBytes(12).toString('hex');
+    const storagePath = `${id}.${ext}`;
+    const bucket = 'raw-uploads';
+
+    // Generate presigned URL for direct upload (valid for 2 hours)
+    const presignedUrl = await minioClient.presignedPutObject(bucket, storagePath, 2 * 60 * 60);
+    
+    // Return both the presigned URL and the storage path
+    return { 
+      uploadUrl: presignedUrl,
+      storagePath,
+      expiresIn: 7200 // 2 hours in seconds
+    };
+  } catch (err) {
+    request.log.error(err);
+    reply.status(500).send({ error: 'Failed to generate upload URL' });
+  }
+});
+
 // Test queue route
 server.get('/test-queue', async (request, reply) => {
   try {

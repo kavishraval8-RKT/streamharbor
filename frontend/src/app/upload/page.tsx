@@ -87,17 +87,19 @@ export default function UploadPage() {
     setThumbPct(0);
 
     try {
-      // Upload through backend endpoint (streams to MinIO internally)
-      setMessage('Uploading video file...');
+      // Get presigned URL for direct upload to MinIO (bypasses Cloudflare 100MB limit)
+      setMessage('Preparing upload...');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.streamharbor.me';
       
-      const formData = new FormData();
-      formData.append('file', file);
+      const presignedRes = await fetch(`${backendUrl}/api/presigned-upload-url?filename=${encodeURIComponent(file.name)}`);
+      if (!presignedRes.ok) throw new Error('Failed to get upload URL');
+      const { uploadUrl, storagePath } = await presignedRes.json();
       
-      let storagePath: string = '';
+      // Upload directly to MinIO using presigned URL
+      setMessage('Uploading video file...');
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${backendUrl}/api/upload-file`);
+        xhr.open('PUT', uploadUrl);
         
         // Set a very long timeout for large video uploads (2 hours)
         xhr.timeout = 2 * 60 * 60 * 1000;
@@ -110,23 +112,16 @@ export default function UploadPage() {
           }
         };
         xhr.onload = () => {
-          try {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const json = JSON.parse(xhr.responseText);
-              storagePath = json.storagePath;
-              resolve();
-            } else {
-              const json = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-              reject(new Error(json.error || `Upload failed (${xhr.status})`));
-            }
-          } catch (err) {
-            reject(err);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed (${xhr.status})`));
           }
         };
         xhr.onerror = () => reject(new Error('Network error during upload. Please check your connection.'));
         xhr.ontimeout = () => reject(new Error('Upload timed out. File may be too large.'));
         xhr.onabort = () => reject(new Error('Upload was cancelled.'));
-        xhr.send(formData);
+        xhr.send(file);
       });
       setMessage('Video uploaded successfully!');
 
