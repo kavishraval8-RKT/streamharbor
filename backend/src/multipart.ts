@@ -4,10 +4,10 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 const REGION = process.env.AWS_REGION || 'us-east-1';
 
 export function getS3() {
-  const useSSL = process.env.MINIO_USE_SSL === 'true';
-  const endpoint = `${useSSL ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}`;
+  // Use public URL for presigning so browser can reach it
+  const publicUrl = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
   return new S3Client({
-    endpoint,
+    endpoint: publicUrl,
     region: REGION,
     forcePathStyle: true,
     credentials: {
