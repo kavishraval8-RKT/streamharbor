@@ -43,6 +43,8 @@ export const config = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        // Ensure cookie is valid across sub-paths on our domain
+        domain: process.env.NODE_ENV === 'production' ? 'streamharbor.me' : undefined,
       },
     },
   },
@@ -93,6 +95,15 @@ export const config = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      const prod = process.env.NEXTAUTH_URL || 'https://streamharbor.me';
+      try {
+        const u = new URL(url, prod);
+        return `${prod}${u.pathname}${u.search}${u.hash}`;
+      } catch {
+        return prod;
+      }
+    },
     async jwt({ token, user }: { token: JWT; user?: AuthUser }) {
       if (user?.role) token.role = user.role;
       return token;

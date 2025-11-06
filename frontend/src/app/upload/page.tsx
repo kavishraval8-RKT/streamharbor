@@ -87,42 +87,70 @@ export default function UploadPage() {
     setThumbPct(0);
 
     try {
-      // Get presigned URL for direct upload to MinIO (bypasses Cloudflare 100MB limit)
+      // Multipart upload via presigned part URLs (bypass Cloudflare per-chunk < 100MB)
       setMessage('Preparing upload...');
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.streamharbor.me';
-      
-      const presignedRes = await fetch(`${backendUrl}/api/presigned-upload-url?filename=${encodeURIComponent(file.name)}`);
-      if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl, storagePath } = await presignedRes.json();
-      
-      // Upload directly to MinIO using presigned URL
-      setMessage('Uploading video file...');
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', uploadUrl);
-        
-        // Set a very long timeout for large video uploads (2 hours)
-        xhr.timeout = 2 * 60 * 60 * 1000;
-        
-        xhr.upload.onprogress = (evt) => {
-          if (evt.lengthComputable) {
-            const pct = Math.round((evt.loaded / evt.total) * 100);
-            setUploadPct(pct);
-            setMessage(`Uploading video file... ${pct}%`);
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed (${xhr.status})`));
-          }
-        };
-        xhr.onerror = () => reject(new Error('Network error during upload. Please check your connection.'));
-        xhr.ontimeout = () => reject(new Error('Upload timed out. File may be too large.'));
-        xhr.onabort = () => reject(new Error('Upload was cancelled.'));
-        xhr.send(file);
+
+      // 1) Initiate multipart
+      const initRes = await fetch(`${backendUrl}/api/multipart/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || 'application/octet-stream' }),
       });
+      if (!initRes.ok) throw new Error('Failed to start multipart upload');
+      const { uploadId, storagePath } = await initRes.json();
+
+      // 2) Upload parts
+      const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+      const totalParts = Math.ceil(file.size / CHUNK_SIZE);
+      const parts: Array<{ ETag: string; PartNumber: number }> = [];
+
+      for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+        const start = (partNumber - 1) * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const blob = file.slice(start, end);
+
+        // Get presigned URL for this part
+        const ps = await fetch(`${backendUrl}/api/multipart/presign?uploadId=${encodeURIComponent(uploadId)}&storagePath=${encodeURIComponent(storagePath)}&partNumber=${partNumber}`);
+        if (!ps.ok) throw new Error(`Failed to presign part ${partNumber}`);
+        const { url } = await ps.json();
+
+        // PUT the chunk to MinIO
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', url);
+          xhr.timeout = 2 * 60 * 60 * 1000;
+          const uploadedBefore = (partNumber - 1) * CHUNK_SIZE;
+          xhr.upload.onprogress = (evt) => {
+            if (evt.lengthComputable) {
+              const totalUploaded = uploadedBefore + evt.loaded;
+              const pct = Math.min(100, Math.round((totalUploaded / file.size) * 100));
+              setUploadPct(pct);
+              setMessage(`Uploading video file... ${pct}%`);
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const etag = xhr.getResponseHeader('ETag') || xhr.getResponseHeader('Etag') || '';
+              parts.push({ ETag: etag.replaceAll('"', ''), PartNumber: partNumber });
+              resolve();
+            } else {
+              reject(new Error(`Part ${partNumber} failed (${xhr.status})`));
+            }
+          };
+          xhr.onerror = () => reject(new Error(`Network error on part ${partNumber}`));
+          xhr.ontimeout = () => reject(new Error(`Part ${partNumber} timed out`));
+          xhr.send(blob);
+        });
+      }
+
+      // 3) Complete multipart upload
+      const completeRes = await fetch(`${backendUrl}/api/multipart/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uploadId, storagePath, parts }),
+      });
+      if (!completeRes.ok) throw new Error('Failed to complete multipart upload');
       setMessage('Video uploaded successfully!');
 
       // 2. Upload thumbnail if provided

@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import 'dotenv/config';
 import { query } from './db';
 import minioClient, { setupMinIO } from './minioClient';
+import { initiateMultipartUpload, presignPartUrl, completeMultipartUpload, abortMultipartUpload } from './multipart';
 import { Client as MinioClient } from 'minio';
 import { videoQueue } from './queue';
 import cors from '@fastify/cors';
@@ -100,6 +101,56 @@ server.get('/api/presigned-upload-url', async (request, reply) => {
   } catch (err) {
     request.log.error(err);
     reply.status(500).send({ error: 'Failed to generate upload URL' });
+  }
+});
+
+// Multipart upload endpoints (chunked uploads to bypass proxy limits)
+server.post('/api/multipart/initiate', async (request, reply) => {
+  try {
+    const body = request.body as { filename: string; contentType?: string };
+    const filename = body?.filename || `upload-${Date.now()}`;
+    const ext = filename.split('.').pop() || 'bin';
+    const id = crypto.randomBytes(12).toString('hex');
+    const storagePath = `${id}.${ext}`;
+    const bucket = 'raw-uploads';
+    const uploadId = await initiateMultipartUpload(bucket, storagePath, body?.contentType);
+    return { uploadId, storagePath };
+  } catch (err) {
+    request.log.error(err);
+    reply.status(500).send({ error: 'Failed to initiate multipart upload' });
+  }
+});
+
+server.get('/api/multipart/presign', async (request, reply) => {
+  try {
+    const q = request.query as any;
+    const { uploadId, storagePath, partNumber } = q;
+    if (!uploadId || !storagePath || !partNumber) {
+      reply.status(400).send({ error: 'uploadId, storagePath and partNumber are required' });
+      return;
+    }
+    const bucket = 'raw-uploads';
+    const url = await presignPartUrl(bucket, storagePath, String(uploadId), parseInt(String(partNumber), 10));
+    return { url };
+  } catch (err) {
+    request.log.error(err);
+    reply.status(500).send({ error: 'Failed to presign part' });
+  }
+});
+
+server.post('/api/multipart/complete', async (request, reply) => {
+  try {
+    const body = request.body as { uploadId: string; storagePath: string; parts: Array<{ ETag: string; PartNumber: number }> };
+    if (!body?.uploadId || !body?.storagePath || !Array.isArray(body.parts) || body.parts.length === 0) {
+      reply.status(400).send({ error: 'uploadId, storagePath and parts are required' });
+      return;
+    }
+    const bucket = 'raw-uploads';
+    await completeMultipartUpload(bucket, body.storagePath, body.uploadId, body.parts);
+    return { ok: true };
+  } catch (err) {
+    request.log.error(err);
+    reply.status(500).send({ error: 'Failed to complete multipart upload' });
   }
 });
 
