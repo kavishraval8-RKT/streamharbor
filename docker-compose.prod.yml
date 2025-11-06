@@ -12,7 +12,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
-    # Override dev command with production CMD from Dockerfile
+    # Reset command to use Dockerfile CMD
     command: node server.js
     volumes: []
   backend:
@@ -22,7 +22,7 @@ services:
       - ./backend/.env.production
     environment:
       - NODE_ENV=production
-    # Override dev command with production CMD from Dockerfile
+    # Reset command to use Dockerfile CMD
     command: node dist/server.js
     volumes: []
   worker:
@@ -30,7 +30,7 @@ services:
       context: ./worker
     environment:
       - NODE_ENV=production
-    # Override dev command if any
+    # Reset command to use Dockerfile CMD  
     command: node dist/processor.js
     volumes: []
   minio:
