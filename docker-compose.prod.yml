@@ -11,11 +11,28 @@ services:
       - ./frontend/.env.production
     environment:
       - NODE_ENV=production
+      - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
+    # Override dev command with production CMD from Dockerfile
+    command: node server.js
+    volumes: []
   backend:
+    build:
+      context: ./backend
     env_file:
       - ./backend/.env.production
     environment:
       - NODE_ENV=production
+    # Override dev command with production CMD from Dockerfile
+    command: node dist/server.js
+    volumes: []
+  worker:
+    build:
+      context: ./worker
+    environment:
+      - NODE_ENV=production
+    # Override dev command if any
+    command: node dist/processor.js
+    volumes: []
   minio:
     environment:
       - MINIO_SERVER_URL=https://minio.streamharbor.me

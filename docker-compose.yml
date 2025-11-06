@@ -2,7 +2,6 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: builder
       args:
         - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
     ports:
@@ -32,7 +31,6 @@ services:
   backend:
     build:
       context: ./backend
-      target: builder
     ports:
       - "8080:8080"
     volumes:
@@ -116,7 +114,6 @@ services:
   worker:
     build:
       context: ./worker
-      target: builder
     volumes:
       # Keep time sync volumes
       - "/etc/timezone:/etc/timezone:ro"
