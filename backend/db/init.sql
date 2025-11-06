@@ -1,3 +1,6 @@
+-- Create auth schema for NextAuth.js (Prisma)
+CREATE SCHEMA IF NOT EXISTS auth;
+
 -- Create a custom type for video status
 CREATE TYPE video_status AS ENUM ('PENDING', 'PROCESSING', 'PUBLISHED', 'ERROR');
 

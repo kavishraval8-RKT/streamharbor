@@ -3,8 +3,20 @@
 
 services:
   frontend:
+    build:
+      context: ./frontend
+      args:
+        - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
+    env_file:
+      - ./frontend/.env.production
     environment:
-      # Production URLs
-      - BACKEND_INTERNAL_URL=https://api.streamharbor.me
-      - NEXT_PUBLIC_BACKEND_URL=https://api.streamharbor.me
-      - NEXTAUTH_URL=https://streamharbor.me
+      - NODE_ENV=production
+  backend:
+    env_file:
+      - ./backend/.env.production
+    environment:
+      - NODE_ENV=production
+  minio:
+    environment:
+      - MINIO_SERVER_URL=https://minio.streamharbor.me
+      - MINIO_BROWSER_REDIRECT_URL=https://minio.streamharbor.me

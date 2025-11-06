@@ -18,6 +18,15 @@ RUN npm config set fetch-retries 5 \
 	&& npm config set fetch-retry-mintimeout 20000 \
 	&& npm install --prefer-offline --no-audit --no-fund --legacy-peer-deps
 
+# Copy Prisma schema first (needed for generation)
+COPY prisma ./prisma
+
+# Generate Prisma Client before building Next.js
+# Use a dummy DATABASE_URL for build-time generation (actual URL is used at runtime)
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DATABASE_URL=$DATABASE_URL
+RUN npx prisma generate
+
 # Copy rest of the source and build
 COPY . .
 RUN npm run build
@@ -36,6 +45,12 @@ RUN if [ -n "$NPM_REGISTRY" ]; then npm config set registry "$NPM_REGISTRY"; fi
 RUN npm config set fetch-retries 5 \
 	&& npm config set fetch-retry-maxtimeout 120000 \
 	&& npm install --only=production --prefer-offline --no-audit --no-fund --legacy-peer-deps
+
+# Copy Prisma schema and generate client for production runtime
+COPY --from=builder /app/prisma ./prisma
+ARG DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DATABASE_URL=$DATABASE_URL
+RUN npx prisma generate
 
 # Copy Next.js's "standalone" output from the builder
 COPY --from=builder /app/.next/standalone ./
