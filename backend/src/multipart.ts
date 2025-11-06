@@ -41,7 +41,7 @@ export async function initiateMultipartUpload(bucket: string, key: string, conte
 
 export async function presignPartUrl(bucket: string, key: string, uploadId: string, partNumber: number, expiresSeconds = 7200) {
   const s3 = getS3Public(); // Use public endpoint for presigning URLs
-  const cmd = new UploadPartCommand({ Bucket: bucket, Key: key, UploadId: uploadId, PartNumber: partNumber, Body: new Uint8Array() });
+  const cmd = new UploadPartCommand({ Bucket: bucket, Key: key, UploadId: uploadId, PartNumber: partNumber });
   // Body is ignored for signing; MinIO/S3 only need method, path, query.
   const url = await getSignedUrl(s3 as any, cmd as any, { expiresIn: expiresSeconds });
   return url;
