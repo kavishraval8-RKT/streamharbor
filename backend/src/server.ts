@@ -8,7 +8,14 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import crypto from 'crypto';
 
-const server = Fastify({ logger: true });
+const server = Fastify({ 
+  logger: true,
+  // Increase timeouts for large video uploads
+  connectionTimeout: 0, // No timeout on connection
+  keepAliveTimeout: 0, // No timeout on keep-alive
+  requestTimeout: 0, // No timeout on request
+  bodyLimit: 50 * 1024 * 1024 * 1024, // 50GB max body size
+});
 
 // CORS: allow the frontend origin to call our API
 // Use environment variable or default to production URL

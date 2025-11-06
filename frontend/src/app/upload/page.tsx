@@ -98,6 +98,10 @@ export default function UploadPage() {
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${backendUrl}/api/upload-file`);
+        
+        // Set a very long timeout for large video uploads (2 hours)
+        xhr.timeout = 2 * 60 * 60 * 1000;
+        
         xhr.upload.onprogress = (evt) => {
           if (evt.lengthComputable) {
             const pct = Math.round((evt.loaded / evt.total) * 100);
@@ -119,7 +123,9 @@ export default function UploadPage() {
             reject(err);
           }
         };
-        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.onerror = () => reject(new Error('Network error during upload. Please check your connection.'));
+        xhr.ontimeout = () => reject(new Error('Upload timed out. File may be too large.'));
+        xhr.onabort = () => reject(new Error('Upload was cancelled.'));
         xhr.send(formData);
       });
       setMessage('Video uploaded successfully!');
