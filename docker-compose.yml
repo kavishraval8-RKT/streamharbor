@@ -6,25 +6,12 @@ services:
         - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
     ports:
       - "3000:3000"
-    volumes:
-      # Keep time sync volumes
-      - "/etc/timezone:/etc/timezone:ro"
-      - "/etc/localtime:/etc/localtime:ro"
-      - ./frontend:/app
-      - /app/node_modules
-    # Ensure dependencies are installed inside the container when mounting source
-    command: sh -c "apk update && apk add -U --no-cache tzdata && npm install && npm run dev"
+    command: node server.js
     env_file:
-      - ./frontend/.env.local
+      - ./frontend/.env.production
     environment:
-      # Next.js backend URLs - localhost for development
-      - BACKEND_INTERNAL_URL=http://backend:8080
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
-      # Auth configuration
-      - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=your-super-secret-key-min-32-chars-long
-      - ADMIN_EMAIL=admin@streamharbor.local
-      - ADMIN_PASSWORD=admin123
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
     depends_on:
       - backend
 
@@ -33,16 +20,11 @@ services:
       context: ./backend
     ports:
       - "8080:8080"
-    volumes:
-      # Keep time sync volumes
-      - "/etc/timezone:/etc/timezone:ro"
-      - "/etc/localtime:/etc/localtime:ro"
-      - ./backend:/app
-      - /app/node_modules
-    # Ensure dependencies are installed inside the container when mounting source
-    command: sh -c "apk update && apk add -U --no-cache tzdata && npm install && npm run dev"
+    command: node dist/server.js
     env_file:
-      - ./backend/.env.local
+      - ./backend/.env.production
+    environment:
+      - NODE_ENV=production
     depends_on:
       db:
         condition: service_healthy
@@ -74,8 +56,8 @@ services:
     env_file:
       - .env
     environment:
-      - MINIO_SERVER_URL=http://localhost:9000
-      - MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+      - MINIO_SERVER_URL=https://minio.streamharbor.me
+      - MINIO_BROWSER_REDIRECT_URL=https://minio.streamharbor.me
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -114,16 +96,9 @@ services:
   worker:
     build:
       context: ./worker
-    volumes:
-      # Keep time sync volumes
-      - "/etc/timezone:/etc/timezone:ro"
-      - "/etc/localtime:/etc/localtime:ro"
-      - ./worker:/app
-      - /app/node_modules
-    # Ensure dependencies are installed inside the container when mounting source
-    command: sh -c "apk update && apk add -U --no-cache tzdata && npm install && npm run dev"
-    env_file:
-      - .env
+    command: node dist/processor.js
+    environment:
+      - NODE_ENV=production
     depends_on:
       db:
         condition: service_healthy

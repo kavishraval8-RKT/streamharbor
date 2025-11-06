@@ -8,7 +8,7 @@ git pull origin main
 
 echo ""
 echo "=== STEP 2: Stop all containers ==="
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+docker-compose down
 
 echo ""
 echo "=== STEP 3: Remove ALL StreamHarbor images ==="
@@ -20,11 +20,11 @@ docker system prune -af
 
 echo ""
 echo "=== STEP 5: Build with NO CACHE ==="
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache --pull
+docker-compose build --no-cache --pull
 
 echo ""
 echo "=== STEP 6: Start services ==="
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker-compose up -d
 
 echo ""
 echo "=== STEP 7: Wait for startup ==="
@@ -36,6 +36,6 @@ docker-compose ps
 
 echo ""
 echo "=== Done! Check logs if needed ==="
-echo "docker-compose logs backend --tail 50"
-echo "docker-compose logs frontend --tail 50"
-echo "docker-compose logs minio --tail 20"
+echo "docker-compose logs backend | tail -50"
+echo "docker-compose logs frontend | tail -50"
+echo "docker-compose logs minio | tail -20"
