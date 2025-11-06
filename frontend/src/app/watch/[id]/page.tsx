@@ -10,7 +10,7 @@ async function getVideo(id: string) {
       process.env.BACKEND_INTERNAL_URL ||
       process.env.BACKEND_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
-      'http://localhost:8080';
+      'https://api.streamharbor.me';
 
     const res = await fetch(`${base}/api/videos/${id}`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`Failed to fetch video: ${res.status}`);

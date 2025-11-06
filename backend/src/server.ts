@@ -11,10 +11,16 @@ import crypto from 'crypto';
 const server = Fastify({ logger: true });
 
 // CORS: allow the frontend origin to call our API
+// Use environment variable or default to production URL
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'https://streamharbor.me',
+  'https://streamharbor.me'
+];
+
 server.register(cors, {
-  origin: 'https://streamharbor.me',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'HEAD', 'PATCH'],
-  allowedHeaders: '*', // Allow all headers for now to debug
+  allowedHeaders: '*',
   credentials: true,
   exposedHeaders: ['Content-Length', 'X-Request-Id'],
 });
@@ -131,7 +137,7 @@ server.post('/api/videos', async (request, reply) => {
     // If thumbnail path is provided, generate the full URL
     let thumbnailUrl = null;
     if (body.thumbnailPath) {
-      const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
+      const publicBase = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
       thumbnailUrl = `${publicBase}/processed/${body.thumbnailPath}`;
     }
 
@@ -183,7 +189,7 @@ server.post('/api/videos/:id/subtitles', async (request, reply) => {
     }
 
     // Build records and insert
-    const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
+    const publicBase = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
     const rows: any[] = [];
     for (let i = 0; i < uploaded.length; i++) {
       const storagePath = uploaded[i];
@@ -277,7 +283,7 @@ server.post('/api/upload-thumbnail', async (request, reply) => {
     await minioClient.putObject(bucket, storagePath, file.file, file.file.truncated ? -1 : file.file.bytesRead || -1);
 
     // Get public URL
-    const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
+    const publicBase = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
     const thumbnailUrl = `${publicBase}/processed/${storagePath}`;
 
     return { storagePath, thumbnailUrl };
@@ -312,7 +318,7 @@ server.get('/api/videos', async (request, reply) => {
     const rows = result.rows.map((r: any) => {
       const thumbnail = getPublicUrl(r.thumbnail_url);
       // Construct a raw URL for the original uploaded file so the frontend can fallback to it
-      const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
+      const publicBase = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
       const rawUrl = r.storage_path ? `${publicBase}/raw-uploads/${encodeURIComponent(r.storage_path)}` : null;
       return { ...r, thumbnail_url: thumbnail, raw_url: rawUrl };
     });
@@ -336,7 +342,7 @@ server.get('/api/videos/:id', async (request, reply) => {
     row.thumbnail_url = getPublicUrl(row.thumbnail_url);
     row.hls_playlist_url = getPublicUrl(row.hls_playlist_url);
     // expose a raw URL for the original uploaded file
-    const publicBase = process.env.MINIO_PUBLIC_URL || `http${process.env.MINIO_USE_SSL === 'true' ? 's' : ''}://localhost:${process.env.MINIO_PORT}`;
+    const publicBase = process.env.MINIO_PUBLIC_URL || 'https://minio.streamharbor.me';
     row.raw_url = row.storage_path ? `${publicBase}/raw-uploads/${encodeURIComponent(row.storage_path)}` : null;
     return row;
   } catch (err) {

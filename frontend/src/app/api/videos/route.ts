@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       process.env.BACKEND_INTERNAL_URL ||
       process.env.BACKEND_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
-      'http://localhost:8080';
+      'https://api.streamharbor.me';
 
     const target = new URL('/api/videos', base);
     if (q) target.searchParams.set('q', q);

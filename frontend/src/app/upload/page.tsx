@@ -87,31 +87,42 @@ export default function UploadPage() {
     setThumbPct(0);
 
     try {
-      // Step 1: Get presigned URL from backend
-      setMessage('Getting upload URL...');
-      const urlRes = await fetch(`https://api.streamharbor.me/api/upload-url?filename=${encodeURIComponent(file.name)}`);
-      if (!urlRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl, storagePath } = await urlRes.json();
-
-      // Step 2: Upload directly to MinIO using presigned URL (much faster!)
-      setMessage('Uploading file directly to storage...');
+      // Upload through backend endpoint (streams to MinIO internally)
+      setMessage('Uploading video file...');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.streamharbor.me';
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      let storagePath: string = '';
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.open('PUT', uploadUrl);
+        xhr.open('POST', `${backendUrl}/api/upload-file`);
         xhr.upload.onprogress = (evt) => {
-          if (evt.lengthComputable) setUploadPct(Math.round((evt.loaded / evt.total) * 100));
+          if (evt.lengthComputable) {
+            const pct = Math.round((evt.loaded / evt.total) * 100);
+            setUploadPct(pct);
+            setMessage(`Uploading video file... ${pct}%`);
+          }
         };
         xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed (${xhr.status})`));
+          try {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const json = JSON.parse(xhr.responseText);
+              storagePath = json.storagePath;
+              resolve();
+            } else {
+              const json = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+              reject(new Error(json.error || `Upload failed (${xhr.status})`));
+            }
+          } catch (err) {
+            reject(err);
           }
         };
         xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.send(file);
+        xhr.send(formData);
       });
-      setMessage('File uploaded. Finalizing with backend...');
+      setMessage('Video uploaded successfully!');
 
       // 2. Upload thumbnail if provided
       let thumbnailPath = null;
@@ -146,12 +157,12 @@ export default function UploadPage() {
         const thumbFd = new FormData();
         thumbFd.append('file', thumbnail, thumbnail.name);
 
-        const thumbData = await postFormWithProgress('https://api.streamharbor.me/api/upload-thumbnail', thumbFd, setThumbPct).catch(() => null);
+        const thumbData = await postFormWithProgress(`${backendUrl}/api/upload-thumbnail`, thumbFd, setThumbPct).catch(() => null);
         if (thumbData) thumbnailPath = thumbData.storagePath;
       }
 
       // 3. Tell our backend to create the video record and queue the job
-      const res3 = await fetch('https://api.streamharbor.me/api/videos', {
+      const res3 = await fetch(`${backendUrl}/api/videos`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,7 +190,7 @@ export default function UploadPage() {
           subFd.append('lang', s.lang.trim());
         });
         try {
-          await fetch(`https://api.streamharbor.me/api/videos/${videoId}/subtitles`, {
+          await fetch(`${backendUrl}/api/videos/${videoId}/subtitles`, {
             method: 'POST',
             body: subFd,
           });
@@ -195,7 +206,7 @@ export default function UploadPage() {
       let mounted = true;
       const poll = async () => {
         try {
-          const r = await fetch(`https://api.streamharbor.me/api/videos/${videoId}`);
+          const r = await fetch(`${backendUrl}/api/videos/${videoId}`);
           if (!r.ok) return;
           const obj = await r.json();
           if (!mounted) return;
