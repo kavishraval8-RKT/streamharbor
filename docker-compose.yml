@@ -22,6 +22,7 @@ services:
       - "8080:8080"
     command: node dist/server.js
     env_file:
+      - .env
       - ./backend/.env.production
     environment:
       - NODE_ENV=production
@@ -97,6 +98,8 @@ services:
     build:
       context: ./worker
     command: node dist/processor.js
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
     depends_on:
