@@ -53,10 +53,16 @@ RUN npm config set fetch-retries 5 \
 	&& npm install --only=production --prefer-offline --no-audit --no-fund --legacy-peer-deps
 
 # Copy Next.js's "standalone" output from the builder
+# This includes server.js and node_modules needed for runtime
 COPY --from=builder /app/.next/standalone ./
+
 # Copy the static assets (CSS, images)
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
+
+# Copy generated Prisma Client to ensure it's available at runtime
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Expose port 3000 (Next.js default)
 EXPOSE 3000

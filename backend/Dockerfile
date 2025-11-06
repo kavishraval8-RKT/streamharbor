@@ -19,6 +19,9 @@ COPY . .
 # Compile TypeScript to JavaScript
 RUN npm run build
 
+# Verify dist folder was created
+RUN ls -la dist/ || (echo "ERROR: dist folder not created!" && exit 1)
+
 # ---- Stage 2: Production ----
 # Start from a fresh, minimal Node.js image
 FROM node:18-alpine
