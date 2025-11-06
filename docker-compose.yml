@@ -5,6 +5,7 @@ services:
       args:
         - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
         - NEXT_PUBLIC_BACKEND_URL=https://api.streamharbor.me
+        - NEXTAUTH_URL=https://streamharbor.me
     ports:
       - "3000:3000"
     command: node server.js
@@ -15,6 +16,7 @@ services:
       - DATABASE_URL=postgresql://streamharbor:supersecretpassword@db:5432/streamharbor_db
       - NEXTAUTH_URL=https://streamharbor.me
       - NEXT_PUBLIC_BACKEND_URL=https://api.streamharbor.me
+      - NEXTAUTH_SECRET=c8f246e248776215f16475b929624f461b02939e55972e46661c593589373c88
     depends_on:
       - backend
 

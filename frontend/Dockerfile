@@ -27,6 +27,13 @@ RUN npm config set fetch-retries 5 \
 
 # Copy rest of the source and build
 COPY . .
+
+# Set production URLs at build time (these get baked into the Next.js bundle)
+ARG NEXT_PUBLIC_BACKEND_URL="https://api.streamharbor.me"
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL
+ARG NEXTAUTH_URL="https://streamharbor.me"
+ENV NEXTAUTH_URL=$NEXTAUTH_URL
+
 RUN npm run build
 
 # ---- Stage 2: Production ----
